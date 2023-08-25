@@ -4,7 +4,7 @@ sample_rate: 16000 # SR of the input audio
 
 featex: # feature extraction module; components receive the output of torchaudio.load as input.
   whisper:
-    cls: src.featex.asr.whisper.Whisper
+    cls: spkanon_eval.featex.asr.whisper.Whisper
     train: false
     size: small # can be: tiny, base, small, medium, large
     output: text # can be text or encoding
@@ -12,7 +12,7 @@ featex: # feature extraction module; components receive the output of torchaudio
 
 featproc: # feature processing module
   fast_pitch:
-    cls: src.featproc.fast_pitch.FastPitch
+    cls: whisper_fastpitch.fast_pitch.FastPitch
     init: tts_en_fastpitch_multispeaker
     input:
       text: whisper
@@ -26,7 +26,7 @@ featproc: # feature processing module
     featex: [] # non-processed features, from the featex config group
 
 synthesis: # speech synthesis; receives featfusion's output as input
-  cls: src.synthesis.hifigan.HifiGan
+  cls: whisper_fastpitch.hifigan.HifiGan
   init: tts_en_hifitts_hifigan_ft_fastpitch
   sample_rate: 44100
   input:
