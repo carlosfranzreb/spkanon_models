@@ -1,0 +1,1 @@
+pip install --no-input nemo_toolkit==1.17.0
