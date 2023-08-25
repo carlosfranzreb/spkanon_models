@@ -3,9 +3,9 @@ import sys
 import torch
 from torch.nn.modules.utils import consume_prefix_in_state_dict_if_present
 
-sys.path.append("submodules/softvc_hifigan")
+sys.path.append("softvc_hifigan")
 
-from submodules.softvc_hifigan.hifigan.generator import HifiganGenerator
+from softvc_hifigan.hifigan.generator import HifiganGenerator
 
 
 class HifiganSoftVC:

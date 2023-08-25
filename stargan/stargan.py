@@ -15,11 +15,11 @@ import importlib
 from omegaconf import OmegaConf
 import torch
 
-from submodules.StarGANv2VC.models import (
+from StarGANv2VC.models import (
     Generator,
     MappingNetwork,
 )
-from submodules.StarGANv2VC.Utils.JDC.model import JDCNet
+from StarGANv2VC.Utils.JDC.model import JDCNet
 
 
 SAMPLE_RATE = 24000  # model's sample rate

@@ -7,7 +7,7 @@ by a HiFiGAN model.
 import torch
 from torch.nn.modules.utils import consume_prefix_in_state_dict_if_present
 
-from submodules.softvc_acoustic.acoustic.model import AcousticModel
+from softvc_acoustic.acoustic.model import AcousticModel
 
 
 SAMPLE_RATE = 16000  # model's sample rate

@@ -13,7 +13,7 @@ featproc: # feature processing module
     cls: spkanon_models.stargan.stargan.StarGAN
     init: checkpoints/stargan/Models/epoch_00150.pth
     config: checkpoints/stargan/Models/config.yml
-    f0_ckpt: submodules/StarGANv2VC/Utils/JDC/bst.t7
+    f0_ckpt: StarGANv2VC/Utils/JDC/bst.t7
     input:
       spectrogram: spectrogram
       source: source
