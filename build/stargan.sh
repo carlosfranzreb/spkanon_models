@@ -1,5 +1,7 @@
-git submodule add https://github.com/yl4579/StarGANv2-VC
-git mv StarGANv2-VC StarGANv2VC
+# run this script from spkanon_eval with bash spkanon_models/build/stargan.sh
+
+git clone https://github.com/yl4579/StarGANv2-VC
+mv StarGANv2-VC StarGANv2VC
 
 # StarGAN requirements
 pip install --no-input munch==2.5.0
@@ -17,5 +19,5 @@ rm Models.zip
 gdown 1q8oSAzwkqi99oOGXDZyLypCiz0Qzn3Ab
 unzip Vocoder.zip
 rm Vocoder.zip
-pip uninstall --no-input gdown
+pip uninstall -y gdown
 cd ../..
