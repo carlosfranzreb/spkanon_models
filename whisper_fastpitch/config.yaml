@@ -1,6 +1,7 @@
 name: "Multi-speaker FastPitch + corresponding HiFi-GAN"
 
 sample_rate: 16000 # SR of the input audio
+batch_size: 4
 
 featex: # feature extraction module; components receive the output of torchaudio.load as input.
   whisper:
