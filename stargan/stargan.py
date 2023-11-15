@@ -12,8 +12,9 @@ Currently, only the first kind is implemented.
 
 import importlib
 
-from omegaconf import OmegaConf
+from omegaconf import OmegaConf, DictConfig
 import torch
+from torch import Tensor
 
 from StarGANv2VC.models import (
     Generator,
@@ -21,12 +22,14 @@ from StarGANv2VC.models import (
 )
 from StarGANv2VC.Utils.JDC.model import JDCNet
 
+from spkanon_eval.component_definitions import InferComponent
+
 
 SAMPLE_RATE = 24000  # model's sample rate
 
 
-class StarGAN:
-    def __init__(self, config, device):
+class StarGAN(InferComponent):
+    def __init__(self, config: DictConfig, device: str) -> None:
         """
         The config must indicate under which key are placed the transcripts in the
         batch, under `config.input`. It may also indicate which speaker to use, under
@@ -42,6 +45,7 @@ class StarGAN:
         self.config = config
         self.device = device
         self.input_spec = config.input.spectrogram
+        self.input_len = config.input.n_frames
         self.input_source = config.input.source
         self.input_target = config.input.target
 
@@ -51,7 +55,7 @@ class StarGAN:
 
         self.target_selection = None  # initialized later (see init_target_selection)
 
-    def init_target_selection(self, cfg, *args):
+    def init_target_selection(self, cfg: DictConfig, *args):
         """
         Initialize the target selection algorithm. This method is called by the
         anonymizer, passing it config and the arguments that the defined algorithm
@@ -70,7 +74,7 @@ class StarGAN:
         cls = getattr(module, cls_str)
         self.target_selection = cls(style_vecs, cfg, *args)
 
-    def run(self, batch):
+    def run(self, batch: list) -> dict[str, Tensor]:
         """
         Convert the input spectrogram to the target speaker style.
         Input and output dims: (batch_size, n_mels, n_frames)
@@ -98,13 +102,17 @@ class StarGAN:
         f0_feats = self.f0_model.get_feature_GAN(spec_in)
         spec_out = self.generator(spec_in, style_vec, F0=f0_feats)
 
-        return {"spectrogram": spec_out.squeeze(1), "target": target}
+        return {
+            "spectrogram": spec_out.squeeze(1),
+            "n_frames": batch[self.input_len],
+            "target": target,
+        }
 
-    def _normalize_spec(self, spec):
+    def _normalize_spec(self, spec: Tensor) -> Tensor:
         """Normalize a spectrogram with mean=-4 and std=4"""
         return (torch.log(1e-5 + spec) + 4) / 4
 
-    def to(self, device):
+    def to(self, device: str) -> None:
         """
         Implementation of PyTorch's `to()` method to set the device.
         """
