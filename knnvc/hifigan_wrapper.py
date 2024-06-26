@@ -27,15 +27,14 @@ class Hifigan(InferComponent):
         self.model.eval()
         self.model.remove_weight_norm()
 
+    @torch.inference_mode()
     def run(self, batch: list) -> tuple[Tensor, Tensor]:
         """
         Given the spectrogram, placed in the batch under the key `self.input`,
         computes and returns the spectrogram.
         """
         n_samples = batch[self.config.input.n_feats] * self.config.hop_length
-        with torch.inference_mode():
-            waves = self.model.forward(batch[self.config.input.wavlm])
-
+        waves = self.model.forward(batch[self.config.input.wavlm])
         return waves, n_samples
 
     def to(self, device: str) -> None:

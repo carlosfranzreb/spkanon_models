@@ -12,7 +12,7 @@ featproc: # feature processing module
   knnvc:
     cls: spkanon_models.knnvc.converter.Converter
     n_neighbors: 4
-    target_feats: null
+    target_feats: ${target_feats}
     wavlm: ${featex.wavlm}
     wavlm_dl:
       batch_size: ${batch_size}

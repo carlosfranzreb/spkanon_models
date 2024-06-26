@@ -2,7 +2,6 @@
 Selects targets based on speaker embeddings.
 """
 
-
 import os
 import json
 import logging
@@ -69,7 +68,7 @@ class Converter:
                 )
             return
 
-        # otherwise get the WavLM features and concatenate them for each speaker
+        # otherwise compute the WavLM features and concatenate them for each speaker
         LOGGER.info("Extracting target features")
         wavlm = setup_module(config.wavlm, device)
         dl = eval_dataloader(config.wavlm_dl, target_df, device)
