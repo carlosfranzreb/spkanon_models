@@ -56,7 +56,7 @@ class Converter:
         # otherwise compute the WavLM features and concatenate them for each speaker
         LOGGER.info("Extracting target features")
         wavlm = setup_module(config.wavlm, device)
-        dl = eval_dataloader(config.wavlm_dl, target_df, device)
+        dl = eval_dataloader(config.wavlm_dl, config.target_df, device)
         for _, batch, data in dl:
             feats, feat_lengths = wavlm.run(batch).values()
             for idx in range(len(feats)):
@@ -117,7 +117,11 @@ class Converter:
             )
         converted_batch = pad_sequence(converted_feats, batch_first=True)
 
-        return {"wavlm": converted_batch.to(self.device), "target": target, "n_feats": n_feats}
+        return {
+            "wavlm": converted_batch.to(self.device),
+            "target": target,
+            "n_feats": n_feats,
+        }
 
     def convert_vecs(self, source_vecs: Tensor, target_vecs: Tensor) -> Tensor:
         """
