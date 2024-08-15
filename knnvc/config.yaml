@@ -23,7 +23,7 @@ featproc: # feature processing module
       feats: feats
       n_feats: n_feats
       source: source
-      target: target
+      source_is_male: source_is_male
   output: # what is passed to the next module
     featproc:
       - wavlm

@@ -22,9 +22,10 @@ LOGGER = logging.getLogger("progress")
 class Converter:
     def __init__(self, config: OmegaConf, device: str) -> None:
         """
-        Initialize the converter. For the targets, it requires either a datafile
-        (config.target_df) to compute the target features, or a directory where
-        previously computed features are stored..
+        Initialize the converter.
+
+        It requires a datafile for the targets in the path data/targets.txt under
+        the `exp_folder`, which is present in the config object.
 
         You can also pass a directory with the WavLM features of the targets
         (config.target_feats), as dumped by a previous run. If this directory is not
@@ -32,16 +33,15 @@ class Converter:
         be reused in future runs.
 
         Args:
-            config: the config object. Must contain `target_df`, which refers to a
-                datafile with the samples for the target selection algorithm, only if
-                there are no pre-computed features.
-                ! We assume that all samples of each speaker are consecutive.
+            config: we assume that all samples of each speaker are consecutive.
             device: the device where the model should run.
         """
         self.config = config
         self.device = device
         self.target_selection = None  # initialized later (see init_target_selection)
         self.target_feats = list()
+        self.target_is_male = list()
+        target_df = os.path.join(config.exp_folder, "data", "targets.txt")
 
         # if possible, load the WavLM features of the targets
         target_feats_dir = config.get("target_feats", None)
@@ -51,18 +51,29 @@ class Converter:
                 self.target_feats.append(
                     torch.load(os.path.join(target_feats_dir, f"{spk_idx}.pt"))
                 )
+
+            # gather the genders of the target speakers
+            LOGGER.info("Loading the genders of the target speakers")
+            self.target_is_male = torch.zeros(len(self.target_feats), dtype=torch.bool)
+            with open(target_df, "r") as f:
+                for line in f:
+                    obj = json.loads(line.strip())
+                    spk = obj["speaker_id"]
+                    self.target_is_male[spk] = obj["gender"] == "M"
+
             return
 
         # otherwise compute the WavLM features and concatenate them for each speaker
         LOGGER.info("Extracting target features")
         wavlm = setup_module(config.wavlm, device)
-        dl = eval_dataloader(config.wavlm_dl, config.target_df, device)
+        dl = eval_dataloader(config.wavlm_dl, target_df, device)
         for _, batch, data in dl:
             feats, feat_lengths = wavlm.run(batch).values()
             for idx in range(len(feats)):
                 spk = data[idx]["speaker_id"]
                 if len(self.target_feats) == spk:
                     self.target_feats.append(None)
+                    self.target_is_male.append(data[idx]["gender"] == "M")
                 unpadded_feats = feats[idx, : feat_lengths[idx]].to("cpu")
                 if self.target_feats[spk] is None:
                     self.target_feats[spk] = unpadded_feats
@@ -70,6 +81,8 @@ class Converter:
                     self.target_feats[spk] = torch.cat(
                         [self.target_feats[spk], unpadded_feats], dim=0
                     )
+
+        self.target_is_male = torch.tensor(self.target_is_male)
 
         # dump the features
         dump_folder = os.path.join(config.exp_folder, "target_feats")
@@ -87,7 +100,9 @@ class Converter:
         module_str, cls_str = cfg.cls.rsplit(".", 1)
         module = importlib.import_module(module_str)
         cls = getattr(module, cls_str)
-        self.target_selection = cls(self.target_feats, cfg, *args)
+        self.target_selection = cls(
+            self.target_feats, cfg, target_is_male=self.target_is_male, *args
+        )
 
     def run(self, batch: list) -> dict:
         """
@@ -101,12 +116,8 @@ class Converter:
         feats = batch[self.config.input.feats].to("cpu")
         n_feats = batch[self.config.input.n_feats].to("cpu")
         source = batch[self.config.input.source].to("cpu")
-        target_in = (
-            batch[self.config.input.target].to("cpu")
-            if self.config.input.target in batch
-            else None
-        )
-        target = self.target_selection.select(feats, source, target_in)
+        source_is_male = batch[self.config.input.source_is_male].to("cpu")
+        target = self.target_selection.select(feats, source, source_is_male)
 
         # run the conversion
         converted_feats = list()
