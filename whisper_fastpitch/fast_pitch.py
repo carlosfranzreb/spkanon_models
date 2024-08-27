@@ -13,11 +13,11 @@ class FastPitch:
         `config.speaker`. The model is loaded from the path specified in `config.init`.
         """
 
+        self.config = config
         self.device = device
-        self.input_text = config.input.text
-        self.input_source = config.input.source
-        self.input_target = config.input.target
         self.n_targets = config.n_targets
+        self.target_is_male = torch.zeros(self.n_targets, dtype=torch.bool)
+        self.target_is_male[self.n_targets // 2 :] = True  # TODO: is this correct?
 
         model_path = config.init
         if model_path.endswith(".nemo"):
@@ -41,7 +41,7 @@ class FastPitch:
         module_str, cls_str = cfg.cls.rsplit(".", 1)
         module = importlib.import_module(module_str)
         cls = getattr(module, cls_str)
-        self.target_selection = cls(targets, cfg, *args)
+        self.target_selection = cls(targets, cfg, self.target_is_male, *args)
 
     def run(self, batch):
         """
@@ -52,20 +52,47 @@ class FastPitch:
         """
 
         # get the texts and the source and target speakers
-        texts = batch[self.input_text]
-        source = batch[self.input_source]
-        target_in = batch[self.input_target] if self.input_target in batch else None
+        texts = batch[self.config.input.text]
+        source = batch[self.config.input.source]
+        source_is_male = batch[self.config.input.source_is_male]
+
         mock_input = torch.zeros(len(texts), dtype=torch.int64, device=self.device)
-        target = self.target_selection.select(mock_input, source, target_in)
+        target = self.target_selection.select(
+            mock_input, source, source_is_male
+        )
 
         # compute the tokens from the transcripts
+        n_tokens = torch.zeros(len(texts), dtype=torch.int64, device=self.device)
         tokens = list()
-        for text in texts:
+        for text_idx, text in enumerate(texts):
             tokens.append(self.model.parse(text).squeeze())
+            n_tokens[text_idx] = tokens[-1].shape[0]
         tokens = _pad_tensors(tokens)
 
-        spec = self.model.generate_spectrogram(tokens, speaker=target)
-        return {"spectrogram": spec, "target": target}
+        (
+            spect,
+            dec_lens,
+            durs_predicted,
+            log_durs_predicted,
+            pitch_predicted,
+            attn_soft,
+            attn_logprob,
+            attn_hard,
+            attn_hard_dur,
+            pitch,
+            energy_pred,
+            energy_tgt,
+        ) = self.model.fastpitch(
+            text=tokens,
+            durs=None,
+            pitch=None,
+            speaker=target,
+            pace=1.0,
+            reference_spec=None,
+            reference_spec_lens=None,
+        )
+
+        return {"spectrogram": spect, "lengths": dec_lens, "target": target}
 
     def to(self, device):
         """

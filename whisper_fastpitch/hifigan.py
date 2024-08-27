@@ -1,3 +1,4 @@
+import torch
 from nemo.collections.tts.models import HifiGanModel
 
 
@@ -16,9 +17,15 @@ class HifiGan:
         else:
             self.model = HifiGanModel.from_pretrained(model_name=model_init)
 
+        # compute the upsample factor of the model
+        upsample_rates = self.model.cfg["generator"]["upsample_rates"]
+        self.upsample_factor = int(torch.prod(torch.tensor(upsample_rates)).item())
+
     def run(self, batch):
         spec = batch[self.config.input.spectrogram]
-        return self.model.forward(spec=spec)
+        lens = batch[self.config.input.lengths]
+        n_samples = lens * self.upsample_factor
+        return self.model.forward(spec=spec), n_samples
 
     def to(self, device):
         """
