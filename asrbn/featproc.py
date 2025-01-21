@@ -7,9 +7,13 @@ import os
 import json
 import importlib
 
+import torch
 from omegaconf import DictConfig
 
 from spkanon_eval.component_definitions import InferComponent
+
+# these targets are not available in the model
+EXCLUDE = [1723, 328, 445, 441]
 
 
 class Selector(InferComponent):
@@ -30,11 +34,17 @@ class Selector(InferComponent):
                     self.target_labels.append(None)
                     self.target_is_male.append(None)
                 if self.target_labels[spkid] is None:
-                    self.target_labels[spkid] = obj["label"]
+                    self.target_labels[spkid] = int(obj["label"])
                     self.target_is_male[spkid] = obj["gender"] == "M"
 
         # ensure that the target datafile is LibriSpeech-train-clean-100
-        assert len(self.target_labels) == 251 and "1034" in self.target_labels
+        assert len(self.target_labels) == 251 and 1034 in self.target_labels
+
+        # remove the excluded targets
+        for label in EXCLUDE:
+            index = self.target_labels.index(label)
+            del self.target_labels[index]
+            del self.target_is_male[index]
 
     def init_target_selection(self, cfg: DictConfig, *args):
         """
@@ -58,7 +68,7 @@ class Selector(InferComponent):
         source = batch[self.config.input.source].to("cpu")
         source_is_male = batch[self.config.input.source_is_male].to("cpu")
         target = self.target_selection.select(audio, source, source_is_male)
-        target = [self.target_labels[t] for t in target]
+        target = torch.tensor([self.target_labels[t] for t in target])
         return {"target": target}
 
     def to(self, device):

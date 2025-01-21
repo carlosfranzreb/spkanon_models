@@ -24,15 +24,16 @@ class ASRBN(InferComponent):
         self.model.to(device)
         self.model.eval()
 
-    def run(self, batch: dict) -> Tensor:
+    def run(self, batch: dict) -> tuple[Tensor, Tensor]:
         """
         The batch contains a batch of audio samples as a tensor, and the string
         identifiers of the targets that should be used to convert the audio samples.
         """
         audio = batch["audio"].to(self.device)
-        target = batch["target"]
-        # TODO: compute ouput n_samples
-        return self.model.convert(audio, target)
+        n_samples = batch["n_samples"]
+        target = [str(t.item()) for t in batch["target"]]
+        audio_anon = self.model.convert(audio, target)
+        return audio_anon, n_samples
 
     def to(self, device: str) -> None:
         """
