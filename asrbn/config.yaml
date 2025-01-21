@@ -1,0 +1,27 @@
+sample_rate: 16000
+batch_size: 2
+
+featproc: # feature processing module
+  selector:
+    cls: spkanon_models.asrbn.featproc.Selector
+    exp_folder: ${exp_folder}
+    input:
+      audio: audio
+      n_samples: n_samples
+      source: source
+      source_is_male: source_is_male
+  output: # what is passed to the next module
+    featproc:
+      - target
+    featex:
+      - audio
+      - n_samples
+
+synthesis: # speech synthesis; receives featfusion's output as input
+  cls: spkanon_models.asrbn.model.ASRBN
+  ckpt: hifigan_bn_tdnnf_wav2vec2_vq_48_v1
+  sample_rate: ${sample_rate}
+  input:
+    audio: audio
+    n_samples: n_samples
+    target: target
