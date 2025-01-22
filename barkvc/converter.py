@@ -99,7 +99,6 @@ class BarkVC(InferComponent):
         cls = getattr(module, cls_str)
         self.target_selection = cls(self.target_feats, cfg, *args)
 
-    @torch.inference_mode()
     def run(self, batch):
         """
         Given the spectrogram, placed in the batch under the key `self.input`,
@@ -131,7 +130,6 @@ class BarkVC(InferComponent):
 
         return {"encodec": converted_batch, "target": target, "n_feats": n_feats_out}
 
-    @torch.inference_mode()
     def generate_codes(
         self, hubert_feats: np.ndarray, target_feats: torch.Tensor
     ) -> torch.Tensor:

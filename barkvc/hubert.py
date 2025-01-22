@@ -8,11 +8,13 @@ from TTS.tts.layers.bark.hubert.hubert_manager import HubertManager
 from TTS.tts.layers.bark.hubert.kmeans_hubert import CustomHubert
 from TTS.tts.layers.bark.hubert.tokenizer import HubertTokenizer
 
+from spkanon_eval.component_definitions import InferComponent
+
 
 SAMPLE_RATE = 24000  # model's sample rate
 
 
-class Hubert:
+class Hubert(InferComponent):
     def __init__(self, config, device):
         self.device = device
         hubert_manager = HubertManager()
@@ -29,7 +31,6 @@ class Hubert:
             map_location=self.device,
         )
 
-    @torch.inference_mode()
     def run(self, batch):
         """
         Returns the acoustic units for the given NeMo batch, which is a tuple where
