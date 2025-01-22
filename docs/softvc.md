@@ -5,13 +5,11 @@ Soft-VC is a voice conversion model based on HuBERT. It computes the HuBERT feat
 - ICASSP 2022 paper: <https://ieeexplore.ieee.org/abstract/document/9746484>
 - GitHub repository: <https://github.com/bshall/soft-vc>
 
-## Installation
-
-To run this pipeline, you have to clone the original repositories. You can do so by running the build file `build/softvc.sh`.
-
 ## Implementation
 
 We have implemented wrappers for its different components and included each in the appropriate phase. You can find the whole configuration for this model in `config/pipelines/softvc.yaml`.
+
+Nothing needs to be installed manually. The models will be downloaded automatically on runtime through `torch.hub`.
 
 ### Feature extraction
 

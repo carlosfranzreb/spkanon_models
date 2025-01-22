@@ -5,7 +5,7 @@ from torch.nn.modules.utils import consume_prefix_in_state_dict_if_present
 
 sys.path.append("softvc_hifigan")
 
-from softvc_hifigan.hifigan.generator import HifiganGenerator
+from spkanon_models.softvc.hifigan.generator import HifiganGenerator
 
 
 class HifiganSoftVC:
@@ -16,7 +16,7 @@ class HifiganSoftVC:
         - The config must indicate under which key are placed the spectrograms in the
             batch, under `config.input`.
         """
-        self.input = config.input.spectrogram
+        self.config = config
         self.device = device
         self.model = HifiganGenerator()
         hifigan_ckpt = torch.hub.load_state_dict_from_url(
@@ -34,8 +34,11 @@ class HifiganSoftVC:
         Given the spectrogram, placed in the batch under the key `self.input`,
         computes and returns the spectrogram.
         """
-        with torch.inference_mode():
-            return self.model.forward(batch[self.input])
+        audio = batch[self.config.input.spectrogram]
+        n_samples = batch[self.config.input.n_samples]
+        n_samples *= self.config.upsampling_ratio
+        audio_anon = self.model.forward(audio)
+        return audio_anon, n_samples
 
     def to(self, device):
         """

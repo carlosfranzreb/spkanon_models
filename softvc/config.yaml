@@ -4,20 +4,26 @@ batch_size: 1
 featex:
   hubert:
     cls: spkanon_models.softvc.hubert_softvc.HubertSoftVC
+    downsampling_ratio: 320
 
 featproc:
   acoustic:
     cls: spkanon_models.softvc.acoustic_softvc.AcousticSoftVC
+    upsampling_ratio: 2
     input:
-      hubert_units: hubert
+      feats: feats
+      n_feats: n_feats
   output:
     featproc:
       - spectrogram
+      - n_samples
       - target
     featex: []
 
 synthesis:
   cls: spkanon_models.softvc.hifigan_softvc.HifiganSoftVC
   sample_rate: ${sample_rate}
+  upsampling_ratio: 160
   input:
     spectrogram: spectrogram
+    n_samples: n_samples

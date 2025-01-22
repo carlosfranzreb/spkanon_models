@@ -3,11 +3,10 @@ Acoustic model for the SoftVC model. It is preceded by a HuBERT model and follow
 by a HiFiGAN model.
 """
 
-
 import torch
 from torch.nn.modules.utils import consume_prefix_in_state_dict_if_present
 
-from softvc_acoustic.acoustic.model import AcousticModel
+from spkanon_models.softvc.acoustic.model import AcousticModel
 
 
 SAMPLE_RATE = 16000  # model's sample rate
@@ -21,8 +20,8 @@ class AcousticSoftVC:
         - The model is loaded following the instructions in the notebook provided in
             the repository https://github.com/bshall/soft-vc.
         """
+        self.config = config
         self.device = device
-        self.input = config.input.hubert_units
 
         self.model = AcousticModel(False, True)
         acoustic_ckpt = torch.hub.load_state_dict_from_url(
@@ -41,9 +40,12 @@ class AcousticSoftVC:
         Given the HuBERT units, placed in the batch under the key `self.input`,
         computes and returns the spectrogram.
         """
-        with torch.inference_mode():
-            spec = self.model.generate(batch[self.input]).transpose(1, 2)
-            return {"spectrogram": spec, "target": 0}
+        feats = batch[self.config.input.feats]
+        n_feats = batch[self.config.input.n_feats]
+        n_samples = n_feats * self.config.upsampling_ratio
+        spec = self.model.generate(feats).transpose(1, 2)
+        target = torch.zeros(n_samples.shape[0], dtype=torch.int32)
+        return {"spectrogram": spec, "n_samples": n_samples, "target": target}
 
     def to(self, device):
         """
