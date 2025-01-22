@@ -2,8 +2,8 @@
 
 Soft-VC is a voice conversion model based on HuBERT. It computes the HuBERT features of the input speech, which implicitly perform the anonymization, given that the HuBERT model was trained to predict text, and not the speaker. They improve the preservation of the linguistic content by predicting the distribution over the discrete HuBERT units, resulting in what they term soft speech units. These units capture more paralinguistics and improve the intelligibility and naturalness of the converted speech. In the Soft-VC pipeline, HuBERT is followed by an acoustic model that transforms HuBERT features into a spectrogram, which is then synthesized by HiFI-GAN. The HiFi-GAN they used is only trained on one speaker from LibriTTS, making Soft-VC an any-to-one voice conversion model.
 
-- ICASSP 2022 paper: https://ieeexplore.ieee.org/abstract/document/9746484
-- GitHub repository: https://github.com/bshall/soft-vc
+- ICASSP 2022 paper: <https://ieeexplore.ieee.org/abstract/document/9746484>
+- GitHub repository: <https://github.com/bshall/soft-vc>
 
 ## Installation
 

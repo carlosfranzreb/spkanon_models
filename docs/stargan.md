@@ -2,8 +2,8 @@
 
 StarGANv2-VC is an unsupervised voice conversion (VC) model where the input speech is adapted to conform with a given style vector, which we extract from the mapping network with the target ID. The generator receives the style vector of the target, as well as the spectrogram and the F0 contour of the input speech. It converts the input spectrogram to the given style vector, preserving the F0 contour, which is then synthesized with the Parallel WaveGAN. The generator is trained adversarially with two models: one which discriminates real samples from fake ones, and another which recognizes the converted sample's speaker. Six additional losses are included to ensure that the style vector is used appropriately, and that the converted speech is consistent with the input speech.
 
-- Interspeech 2021 paper: https://www.isca-speech.org/archive/interspeech_2021/li21e_interspeech.html
-- GitHub repository: https://github.com/yl4579/StarGANv2-VC
+- Interspeech 2021 paper: <https://www.isca-speech.org/archive/interspeech_2021/li21e_interspeech.html>
+- GitHub repository: <https://github.com/yl4579/StarGANv2-VC>
 
 ## Installation
 

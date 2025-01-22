@@ -2,15 +2,15 @@
 
 kNN-VC is a zero-shot voice conversion model based on WavLM. It computes the WavLM features of the source and target speech, and replaces the source features with the target features that are closest according to cosine similarity, resulting in arguably state-of-the-art zero-shot conversion.
 
-- Interspeech 2023 paper: https://www.isca-speech.org/archive/interspeech_2023/baas23_interspeech.html
-- GitHub repository: https://github.com/bshall/knn-vc
+- Interspeech 2023 paper: <https://www.isca-speech.org/archive/interspeech_2023/baas23_interspeech.html>
+- GitHub repository: <https://github.com/bshall/knn-vc>
 
 ## Installation
 
 To run this pipeline, you have to clone the download the WavLM and HiFiGAN checkpoints and add their paths to the config file.
 
-- WavLM: https://github.com/bshall/knn-vc/releases/download/v0.1/WavLM-Large.pt
-- HifiGAN: https://github.com/bshall/knn-vc/releases/download/v0.1/prematch_g_02500000.pt
+- WavLM: <https://github.com/bshall/knn-vc/releases/download/v0.1/WavLM-Large.pt>
+- HifiGAN: <https://github.com/bshall/knn-vc/releases/download/v0.1/prematch_g_02500000.pt>
 
 ## Implementation
 
@@ -32,7 +32,6 @@ This module comprises the nearest-neighbors conversion. For that, it must first 
 - `wavlm`: configuration of the WavLM feature extractor, as defined above.
 - `wavlm_dl`: batch size, num. of workers and sample rate to use for the dataloader.
 - `exp_folder`: current experiment folder, used to find the target datafile and to dump the computed WavLM features. These features can be re-used by a future run by setting their path in the field `wavlm_feats`.
-
 
 ### Synthesis
 
