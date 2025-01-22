@@ -27,7 +27,6 @@ class Hifigan(InferComponent):
         self.model.eval()
         self.model.remove_weight_norm()
 
-    @torch.inference_mode()
     def run(self, batch: list) -> tuple[Tensor, Tensor]:
         """
         Given the spectrogram, placed in the batch under the key `self.input`,

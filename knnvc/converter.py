@@ -10,17 +10,18 @@ import importlib
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
-from omegaconf import OmegaConf
+from omegaconf import DictConfig
 
 from spkanon_eval.setup_module import setup as setup_module
 from spkanon_eval.datamodules.dataloader import eval_dataloader
+from spkanon_eval.component_definitions import InferComponent
 
 
 LOGGER = logging.getLogger("progress")
 
 
-class Converter:
-    def __init__(self, config: OmegaConf, device: str) -> None:
+class Converter(InferComponent):
+    def __init__(self, config: DictConfig, device: str) -> None:
         """
         Initialize the converter.
 
@@ -66,14 +67,16 @@ class Converter:
         # otherwise compute the WavLM features and concatenate them for each speaker
         LOGGER.info("Extracting target features")
         wavlm = setup_module(config.wavlm, device)
-        dl = eval_dataloader(config.wavlm_dl, target_df, device)
+        dl = eval_dataloader(config.wavlm_dl, target_df, wavlm)
         for _, batch, data in dl:
             feats, feat_lengths = wavlm.run(batch).values()
             for idx in range(len(feats)):
                 spk = data[idx]["speaker_id"]
-                if len(self.target_feats) == spk:
+                while len(self.target_feats) <= spk:
                     self.target_feats.append(None)
-                    self.target_is_male.append(data[idx]["gender"] == "M")
+                    self.target_is_male.append(None)
+
+                self.target_is_male[spk] = data[idx]["gender"] == "M"
                 unpadded_feats = feats[idx, : feat_lengths[idx]].to("cpu")
                 if self.target_feats[spk] is None:
                     self.target_feats[spk] = unpadded_feats
@@ -90,7 +93,7 @@ class Converter:
         for idx in range(len(self.target_feats)):
             torch.save(self.target_feats[idx], os.path.join(dump_folder, f"{idx}.pt"))
 
-    def init_target_selection(self, cfg: OmegaConf, *args):
+    def init_target_selection(self, cfg: DictConfig, *args):
         """
         Initialize the target selection algorithm. This method is called by the
         anonymizer, passing it config and the arguments that the defined algorithm
@@ -149,6 +152,13 @@ class Converter:
         cos_sim = cosine_similarity(source_vecs, target_vecs)
         best = cos_sim.topk(k=self.config.n_neighbors, dim=1)
         return target_vecs[best.indices].mean(dim=1)
+
+    def to(self, device):
+        """
+        Implementation of PyTorch's `to()` method to set the device.
+        """
+        self.device = device
+        self.model.to(self.device)
 
 
 def cosine_similarity(tensor_a: Tensor, tensor_b: Tensor) -> Tensor:

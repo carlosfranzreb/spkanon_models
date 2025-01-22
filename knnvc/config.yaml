@@ -18,6 +18,7 @@ featproc: # feature processing module
       batch_size: ${batch_size}
       num_workers: ${data.config.num_workers}
       sample_rate: ${sample_rate}
+      max_ratio: 0.7
     exp_folder: ${exp_folder}
     input:
       feats: feats
