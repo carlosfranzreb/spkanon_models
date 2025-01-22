@@ -9,6 +9,8 @@ StarGANv2-VC is an unsupervised voice conversion (VC) model where the input spee
 
 To run this pipeline, you have to clone the original StarGANv2-VC repository and download the weights. You can do so by running the build file `build/stargan.sh`.
 
+There is an import error that must be fixed manually, as explained in [this issue](https://github.com/kan-bayashi/ParallelWaveGAN/issues/430). You must change the line `from scipy.signal import kaiser` to `from scipy.signal.windows import kaiser` in the file `venv/lib/python3.11/site-packages/parallel_wavegan/layers/pqmf.py`.
+
 ## Implementation
 
 We have implemented wrappers for its different components and included each in the appropriate phase. You can find the whole configuration for this model in `config/pipelines/stargan.yaml`.

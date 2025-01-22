@@ -21,3 +21,5 @@ unzip Vocoder.zip
 rm Vocoder.zip
 pip uninstall -y gdown
 cd ../..
+
+echo "Remember to change scipy's kaiser import explained in the docs!"

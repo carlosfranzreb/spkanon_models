@@ -19,7 +19,7 @@ featproc: # feature processing module
       spectrogram: spectrogram
       n_frames: n_frames
       source: source
-      target: target
+      source_is_male: source_is_male
     n_targets: 20
   output: # what is passed to the next module
     featproc:

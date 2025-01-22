@@ -9,7 +9,6 @@ There are two kinds of conversion:
 Currently, only the first kind is implemented.
 """
 
-
 import importlib
 
 from omegaconf import OmegaConf, DictConfig
@@ -26,6 +25,28 @@ from spkanon_eval.component_definitions import InferComponent
 
 
 SAMPLE_RATE = 24000  # model's sample rate
+TARGET_IS_MALE = {
+    225: False,
+    228: False,
+    229: False,
+    230: False,
+    231: False,
+    233: False,
+    236: False,
+    239: False,
+    240: False,
+    244: False,
+    226: True,
+    227: True,
+    232: True,
+    243: True,
+    254: True,
+    256: True,
+    258: True,
+    259: True,
+    270: True,
+    273: True,
+}
 
 
 class StarGAN(InferComponent):
@@ -44,10 +65,6 @@ class StarGAN(InferComponent):
 
         self.config = config
         self.device = device
-        self.input_spec = config.input.spectrogram
-        self.input_len = config.input.n_frames
-        self.input_source = config.input.source
-        self.input_target = config.input.target
 
         if not config.init.endswith(".pth"):
             raise ValueError("The model checkpoint must be a .pth file.")
@@ -69,10 +86,12 @@ class StarGAN(InferComponent):
             ).to(self.device),
             torch.arange(self.config.n_targets).to(self.device),
         )
+
         module_str, cls_str = cfg.cls.rsplit(".", 1)
         module = importlib.import_module(module_str)
         cls = getattr(module, cls_str)
-        self.target_selection = cls(style_vecs, cfg, *args)
+        target_is_male = torch.tensor(list(TARGET_IS_MALE.values()))
+        self.target_selection = cls(style_vecs, cfg, target_is_male, *args)
 
     def run(self, batch: list) -> dict[str, Tensor]:
         """
@@ -85,11 +104,12 @@ class StarGAN(InferComponent):
         must be consistent across the utterances of each speaker. This is checked
         here and may overwrite the given target speaker.
         """
+
         # get the spectrograms and target speakers
-        spec = batch[self.input_spec]
-        source = batch[self.input_source]
-        target_in = batch[self.input_target] if self.input_target in batch else None
-        target = self.target_selection.select(spec, source, target_in)
+        spec = batch[self.config.input.spectrogram]
+        source = batch[self.config.input.source]
+        source_is_male = batch[self.config.input.source_is_male]
+        target = self.target_selection.select(spec, source, source_is_male)
 
         # compute the speaker style vector
         latent_dim = self.mapping_network.shared[0].in_features
@@ -104,7 +124,7 @@ class StarGAN(InferComponent):
 
         return {
             "spectrogram": spec_out.squeeze(1),
-            "n_frames": batch[self.input_len],
+            "n_frames": batch[self.config.input.n_frames],
             "target": target,
         }
 
