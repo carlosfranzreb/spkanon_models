@@ -6,22 +6,7 @@ This pipeline is an STT-TTS pipeline: input speech is transcribed (speech-to-tex
 
 According to the NVIDIA's NeMo toolkit documentation, NeMo needs to be installed with `pip install nemo_toolkit`, and also the specific packages for the TTS models with `pip install nemo_toolkit['tts']`. The models will be downloaded on runtime when the pipeline is used for the first time. It requires Python 3.10 or above!
 
-In my M1 Mac, I needed to do the following to get it to run:
-
-```bash
-conda create -p ./venv python=3.10
-conda activate ./venv
-python -m pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
-pip install numpy
-pip install Cython
-pip install "nemo_toolkit[tts]"
-pip uninstall huggingface-hub
-pip install huggingface-hub==0.23.2
-python -m pip install torchvision --extra-index-url https://download.pytorch.org/whl/cpu
-pip install ./spkanon_eval
-conda install -c conda-forge pynini
-pip install nemo_text_processing
-```
+I've installed in my mac and in a linux machine in conda environments. You can find the commands I ran in `build/whisper_fastpitch_macos.sh` and `build/whisper_fastpitch_debian.sh`, respectively. In general, it is easier to install NeMo first and then the framework.
 
 NeMo is always a pain to install, as its lists of dependencies is endless. If you find a better way of getting these models to run, please let me know!
 
