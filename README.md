@@ -6,7 +6,7 @@ Information and evaluation results for each model can be found in the `docs` fol
 
 ## Current models
 
-- **STT-TTS with Whisper & FastPitch**: requires NeMo==1.17. Read more about this pipeline [here](docs/whisper_fastpitch.md).
+- **STT-TTS with Whisper & FastPitch**: requires installing the NeMo toolkit. Read more about this pipeline [here](docs/whisper_fastpitch.md).
 - **StarGANv2-VC**: install it with `build/stargan.sh`. Read more about this pipeline [here](docs/whisper_fastpitch.md).
 - **Soft-VC**: does not require any further dependencies. Read more about this pipeline [here](docs/whisper_fastpitch.md).
 - **kNN-VC**: You only need the WavLM and HifiGAN checkpoints to run this model. Read more about this pipeline [here](docs/knnvc.md).
