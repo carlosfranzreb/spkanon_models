@@ -19,6 +19,7 @@ class ParallelWaveGAN(InferComponent):
         self.model.remove_weight_norm()
         self.model.eval()
         self.replication_pad = torch.nn.ReplicationPad1d(self.model.aux_context_window)
+        self.upsample_factor = self.model.upsample_factor.item()
 
     def run(self, batch: list) -> tuple[Tensor, Tensor]:
         """
@@ -29,11 +30,11 @@ class ParallelWaveGAN(InferComponent):
         spec = batch[self.config.input.spectrogram]
         input_len = batch[self.config.input.n_frames]
         x = torch.randn(
-            spec.shape[0], 1, spec.shape[2] * self.model.upsample_factor
+            spec.shape[0], 1, spec.shape[2] * self.upsample_factor
         ).to(self.device)
         c = self.replication_pad(spec)
         out = self.model.forward(x, c)
-        n_samples = input_len * self.model.upsample_factor
+        n_samples = input_len * self.upsample_factor
         return out, n_samples
 
     def to(self, device: str) -> None:

@@ -114,6 +114,8 @@ class Converter(InferComponent):
 
         Args:
             batch: a list with a tensor comprising spectrograms in first position.
+
+        TODO: Check whether running this on GPU performs better.
         """
         # get the features, source and target speakers
         feats = batch[self.config.input.feats].to("cpu")
@@ -158,8 +160,9 @@ class Converter(InferComponent):
         Implementation of PyTorch's `to()` method to set the device.
         """
         self.device = device
-        self.model.to(self.device)
-
+        self.target_selection.target_is_male = self.target_selection.target_is_male.to(
+            device
+        )
 
 def cosine_similarity(tensor_a: Tensor, tensor_b: Tensor) -> Tensor:
     """

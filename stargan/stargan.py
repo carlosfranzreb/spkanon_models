@@ -90,7 +90,7 @@ class StarGAN(InferComponent):
         module_str, cls_str = cfg.cls.rsplit(".", 1)
         module = importlib.import_module(module_str)
         cls = getattr(module, cls_str)
-        target_is_male = torch.tensor(list(TARGET_IS_MALE.values()))
+        target_is_male = torch.tensor(list(TARGET_IS_MALE.values())).to(self.device)
         self.target_selection = cls(style_vecs, cfg, target_is_male, *args)
 
     def run(self, batch: list) -> dict[str, Tensor]:
@@ -140,7 +140,9 @@ class StarGAN(InferComponent):
         self.generator.to(self.device)
         self.mapping_network.to(self.device)
         self.f0_model.to(self.device)
-
+        self.target_selection.target_is_male = self.target_selection.target_is_male.to(
+            device
+        )
 
 def init_model(config, device):
     """

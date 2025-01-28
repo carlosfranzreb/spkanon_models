@@ -162,3 +162,6 @@ class BarkVC(InferComponent):
         """
         self.device = device
         self.model.to(self.device)
+        self.target_selection.target_is_male = self.target_selection.target_is_male.to(
+            device
+        )

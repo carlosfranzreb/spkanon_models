@@ -16,8 +16,10 @@ class FastPitch:
         self.config = config
         self.device = device
         self.n_targets = config.n_targets
-        self.target_is_male = torch.zeros(self.n_targets, dtype=torch.bool)
-        self.target_is_male[self.n_targets // 2 :] = True  # TODO: is this correct?
+        self.target_is_male = torch.zeros(
+            self.n_targets, dtype=torch.bool, device=device
+        )
+        self.target_is_male[self.n_targets // 2 :] = True
 
         model_path = config.init
         if model_path.endswith(".nemo"):
@@ -54,12 +56,10 @@ class FastPitch:
         # get the texts and the source and target speakers
         texts = batch[self.config.input.text]
         source = batch[self.config.input.source]
-        source_is_male = batch[self.config.input.source_is_male]
+        source_is_male = batch[self.config.input.source_is_male].to(self.device)
 
         mock_input = torch.zeros(len(texts), dtype=torch.int64, device=self.device)
-        target = self.target_selection.select(
-            mock_input, source, source_is_male
-        )
+        target = self.target_selection.select(mock_input, source, source_is_male)
 
         # compute the tokens from the transcripts
         n_tokens = torch.zeros(len(texts), dtype=torch.int64, device=self.device)
@@ -99,6 +99,9 @@ class FastPitch:
         Implementation of PyTorch's `to()` method to set the device.
         """
         self.model.to(device)
+        self.target_selection.target_is_male = self.target_selection.target_is_male.to(
+            device
+        )
         self.device = device
 
 
