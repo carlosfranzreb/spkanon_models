@@ -16,6 +16,10 @@ class HubertSoftVC:
         """
         self.config = config
         self.device = device
+        
+        if not hasattr(torch.nn.utils.parametrizations, "weight_norm"):
+            torch.nn.utils.parametrizations.weight_norm = torch.nn.utils.weight_norm
+
         self.model = torch.hub.load(
             "bshall/hubert:main", "hubert_soft", force_reload=True
         )
