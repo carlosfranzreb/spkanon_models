@@ -58,11 +58,11 @@ class FastPitch:
         source = batch[self.config.input.source]
         source_is_male = batch[self.config.input.source_is_male].to(self.device)
 
-        mock_input = torch.zeros(len(texts), dtype=torch.int64, device=self.device)
-        target = self.target_selection.select(mock_input, source, source_is_male)
+        # pass a dummy input to the target selection algorithm
+        n_tokens = torch.zeros(len(texts), dtype=torch.int64, device=self.device)
+        target = self.target_selection.select(n_tokens, source, source_is_male)
 
         # compute the tokens from the transcripts
-        n_tokens = torch.zeros(len(texts), dtype=torch.int64, device=self.device)
         tokens = list()
         for text_idx, text in enumerate(texts):
             tokens.append(self.model.parse(text).squeeze())
