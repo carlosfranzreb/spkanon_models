@@ -25,6 +25,7 @@ class HifiGan:
         spec = batch[self.config.input.spectrogram]
         lens = batch[self.config.input.lengths]
         n_samples = lens * self.upsample_factor
+
         return self.model.forward(spec=spec), n_samples
 
     def to(self, device):
