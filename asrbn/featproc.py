@@ -46,6 +46,9 @@ class Selector(InferComponent):
             del self.target_labels[index]
             del self.target_is_male[index]
 
+        self.target_labels = torch.tensor(self.target_labels)
+        self.target_is_male = torch.tensor(self.target_is_male)
+
     def init_target_selection(self, cfg: DictConfig, *args):
         """
         Initialize the target selection algorithm. This method is called by the
