@@ -1,12 +1,14 @@
 import importlib
 
+from omegaconf import DictConfig
 from nemo.collections.tts.models import FastPitchModel
 import torch
+from torch import Tensor
 import torch.nn.functional as F
 
 
 class FastPitch:
-    def __init__(self, config, device):
+    def __init__(self, config: DictConfig, device: str):
         """
         The config must indicate under which key are placed the transcripts in the
         batch, under `config.input`. It may also indicate which speaker to use, under
@@ -29,9 +31,10 @@ class FastPitch:
         else:
             self.model = FastPitchModel.from_pretrained(model_name=model_path)
         self.model.eval()
+        self.model = self.model.to(device)
         self.target_selection = None  # initialized later (see init_target_selection)
 
-    def init_target_selection(self, cfg, *args):
+    def init_target_selection(self, cfg: DictConfig, *args):
         """
         Initialize the target selection algorithm. This method is called by the
         anonymizer, passing it config and the arguments that the defined algorithm
@@ -45,7 +48,7 @@ class FastPitch:
         cls = getattr(module, cls_str)
         self.target_selection = cls(targets, cfg, self.target_is_male, *args)
 
-    def run(self, batch):
+    def run(self, batch: list) -> dict:
         """
         The input `batch` is a dict with a key `self.input` that contains the
         transcripts. For each transcript, parse it with the model's parser (performs
@@ -94,7 +97,7 @@ class FastPitch:
 
         return {"spectrogram": spect, "lengths": dec_lens, "target": target}
 
-    def to(self, device):
+    def to(self, device: str):
         """
         Implementation of PyTorch's `to()` method to set the device.
         """
@@ -105,7 +108,7 @@ class FastPitch:
         self.device = device
 
 
-def _pad_tensors(lists):
+def _pad_tensors(lists: list) -> Tensor:
     """`lists` is a list of tensors. Pad them so they have the same length and
     make a tensor with them."""
     max_values = max([l.shape[0] for l in lists])

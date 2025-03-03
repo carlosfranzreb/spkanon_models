@@ -22,4 +22,4 @@ rm Vocoder.zip
 pip uninstall -y gdown
 cd ../..
 
-echo "Remember to change scipy's kaiser import explained in the docs!"
+echo "Remember to change scipy's kaiser import as explained in the docs!"

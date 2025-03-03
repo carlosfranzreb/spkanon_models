@@ -1,5 +1,5 @@
-sample_rate: 24000
-batch_size: 2
+sample_rate_in: 24000
+sample_rate_out: 24000
 
 featex: # feature extraction module; components receive the output of torchaudio.load as input.
   spectrogram:
@@ -31,7 +31,6 @@ featproc: # feature processing module
 synthesis: # speech synthesis; receives featfusion's output as input
   cls: spkanon_models.stargan.parallel_wavegan.ParallelWaveGAN
   init: checkpoints/stargan/Vocoder/checkpoint-400000steps.pkl
-  sample_rate: 24000
   input:
     spectrogram: spectrogram
     n_frames: n_frames

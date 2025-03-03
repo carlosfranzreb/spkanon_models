@@ -37,14 +37,14 @@ class Selector(InferComponent):
                     self.target_labels[spkid] = int(obj["label"])
                     self.target_is_male[spkid] = obj["gender"] == "M"
 
-        # ensure that the target datafile is LibriSpeech-train-clean-100
-        assert len(self.target_labels) == 251 and 1034 in self.target_labels
-
         # remove the excluded targets
         for label in EXCLUDE:
-            index = self.target_labels.index(label)
-            del self.target_labels[index]
-            del self.target_is_male[index]
+            try:
+                index = self.target_labels.index(label)
+                del self.target_labels[index]
+                del self.target_is_male[index]
+            except ValueError:
+                continue
 
         self.target_labels = torch.tensor(self.target_labels)
         self.target_is_male = torch.tensor(self.target_is_male)

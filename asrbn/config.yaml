@@ -1,5 +1,5 @@
-sample_rate: 16000
-batch_size: 2
+sample_rate_in: 16000
+sample_rate_out: 16000
 
 featproc: # feature processing module
   selector:

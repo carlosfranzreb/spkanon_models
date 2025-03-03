@@ -1,5 +1,5 @@
-sample_rate: 16000
-batch_size: 2
+sample_rate_in: 16000
+sample_rate_out: 16000
 
 featex: # feature extraction module; components receive the output of torchaudio.load as input.
   wavlm:
