@@ -5,8 +5,6 @@ by a HiFiGAN model.
 
 import logging
 
-import torch
-
 from TTS.tts.configs.bark_config import BarkConfig
 from TTS.tts.models.bark import Bark
 

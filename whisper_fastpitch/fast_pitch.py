@@ -111,7 +111,10 @@ class FastPitch:
 def _pad_tensors(lists: list) -> Tensor:
     """`lists` is a list of tensors. Pad them so they have the same length and
     make a tensor with them."""
-    max_values = max([l.shape[0] for l in lists])
+    max_values = max([value.shape[0] for value in lists])
     return torch.cat(
-        [F.pad(l, (0, max_values - l.shape[0]), value=0).unsqueeze(0) for l in lists]
+        [
+            F.pad(value, (0, max_values - value.shape[0]), value=0).unsqueeze(0)
+            for value in lists
+        ]
     )
