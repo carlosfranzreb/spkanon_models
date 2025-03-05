@@ -38,8 +38,8 @@ class FastPitch:
         """
         Initialize the target selection algorithm. This method is called by the
         anonymizer, passing it config and the arguments that the defined algorithm
-        requires. These are passed directly to the algorithm, along with the style
-        vectors of the StarGAN.
+        requires. These are passed directly to the algorithm, along with the indices
+        representing the speakers.
         """
 
         targets = torch.arange(self.n_targets).to(self.device)
@@ -56,7 +56,7 @@ class FastPitch:
         with those tokens. Return the spectrograms as a tensor.
         """
 
-        # get the texts and the source and target speakers
+        # get the texts and the source speakers
         texts = batch[self.config.input.text]
         source = batch[self.config.input.source]
         source_is_male = batch[self.config.input.source_is_male].to(self.device)

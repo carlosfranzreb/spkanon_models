@@ -1,0 +1,26 @@
+sample_rate_in: 16000
+sample_rate_out: 24000
+
+featex: # feature extraction module; components receive the output of torchaudio.load as input.
+  whisper:
+    cls: spkanon_eval.featex.asr.whisper_wrapper.Whisper
+    train: false
+    size: small # can be: tiny, base, small, medium, large
+    output: text # can be text or encoding
+    max_chars_div: 800 # used to prevent hallucinations
+
+synthesis:
+  cls: spkanon_models.whisper_kokoro.main.KokoroWrapper
+  lang_code: a
+  speed: 1
+  targets:
+    F:
+      - af_heart
+      - af_bella
+    M:
+      - am_adam
+      - am_fenrir
+  input:
+    text: whisper
+    source: source
+    source_is_male: source_is_male
