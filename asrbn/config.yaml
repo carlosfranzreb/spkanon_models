@@ -13,6 +13,7 @@ featproc: # feature processing module
   output: # what is passed to the next module
     featproc:
       - target
+      - target_labels
     featex:
       - audio
       - n_samples
@@ -25,3 +26,4 @@ synthesis: # speech synthesis; receives featfusion's output as input
     audio: audio
     n_samples: n_samples
     target: target
+    target_labels: target_labels

@@ -1,6 +1,9 @@
 """
 Acoustic model for the SoftVC model. It is preceded by a HuBERT model and followed
 by a HiFiGAN model.
+
+! These Librispeech ls-train-clean-100 targets are not available in the model:
+    [1723, 328, 445, 441]
 """
 
 import os
@@ -12,8 +15,6 @@ from omegaconf import DictConfig
 
 from spkanon_eval.component_definitions import InferComponent
 
-# these targets are not available in the model
-EXCLUDE = [1723, 328, 445, 441]
 
 
 class Selector(InferComponent):
@@ -37,15 +38,6 @@ class Selector(InferComponent):
                     self.target_labels[spkid] = int(obj["label"])
                     self.target_is_male[spkid] = obj["gender"] == "M"
 
-        # remove the excluded targets
-        for label in EXCLUDE:
-            try:
-                index = self.target_labels.index(label)
-                del self.target_labels[index]
-                del self.target_is_male[index]
-            except ValueError:
-                continue
-
         self.target_labels = torch.tensor(self.target_labels)
         self.target_is_male = torch.tensor(self.target_is_male)
 
@@ -59,8 +51,9 @@ class Selector(InferComponent):
         module_str, cls_str = cfg.cls.rsplit(".", 1)
         module = importlib.import_module(module_str)
         cls = getattr(module, cls_str)
+        targets = torch.arange(self.target_labels.shape[0], dtype=torch.int)
         self.target_selection = cls(
-            self.target_labels, cfg, target_is_male=self.target_is_male, *args
+            targets, cfg, target_is_male=self.target_is_male, *args
         )
 
     def run(self, batch: dict) -> dict:
@@ -71,8 +64,8 @@ class Selector(InferComponent):
         source = batch[self.config.input.source].to("cpu")
         source_is_male = batch[self.config.input.source_is_male].to("cpu")
         target = self.target_selection.select(audio, source, source_is_male)
-        target = torch.tensor([self.target_labels[t] for t in target])
-        return {"target": target}
+        target_labels = torch.tensor([self.target_labels[t] for t in target])
+        return {"target": target, "target_labels": target_labels}
 
     def to(self, device):
         """

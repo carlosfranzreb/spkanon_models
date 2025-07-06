@@ -31,8 +31,8 @@ class ASRBN(InferComponent):
         """
         audio = batch["audio"].to(self.device)
         n_samples = batch["n_samples"]
-        target = [str(t.item()) for t in batch["target"]]
-        audio_anon = self.model.convert(audio, target)
+        target_labels = [str(t.item()) for t in batch["target_labels"]]
+        audio_anon = self.model.convert(audio, target_labels)
         return audio_anon, n_samples
 
     def to(self, device: str) -> None:
@@ -41,6 +41,3 @@ class ASRBN(InferComponent):
         """
         self.device = device
         self.model.to(self.device)
-        self.target_selection.target_is_male = self.target_selection.target_is_male.to(
-            device
-        )
