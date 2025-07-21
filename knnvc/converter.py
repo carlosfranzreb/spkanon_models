@@ -50,7 +50,10 @@ class Converter(InferComponent):
             LOGGER.info(f"Loading target features from {target_feats_dir}")
             for spk_idx in range(len(os.listdir(target_feats_dir))):
                 self.target_feats.append(
-                    torch.load(os.path.join(target_feats_dir, f"{spk_idx}.pt"))
+                    torch.load(
+                        os.path.join(target_feats_dir, f"{spk_idx}.pt"),
+                        map_location="cpu",
+                    )
                 )
 
             # gather the genders of the target speakers
@@ -163,6 +166,7 @@ class Converter(InferComponent):
         self.target_selection.target_is_male = self.target_selection.target_is_male.to(
             device
         )
+
 
 def cosine_similarity(tensor_a: Tensor, tensor_b: Tensor) -> Tensor:
     """

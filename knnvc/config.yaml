@@ -17,7 +17,7 @@ featproc: # feature processing module
     wavlm_dl:
       batch_size: ${batch_size}
       num_workers: ${data.config.num_workers}
-      sample_rate: ${sample_rate}
+      sample_rate_in: ${sample_rate_in}
       max_ratio: 0.5
     exp_folder: ${exp_folder}
     input:
