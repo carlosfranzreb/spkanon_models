@@ -82,7 +82,7 @@ class KokoroWrapper:
                 )
             )
             assert len(input_id) + 2 <= context_len, (len(input_id) + 2, context_len)
-            input_ids.append(torch.tensor([0, *input_id, 0]))
+            input_ids.append(torch.tensor([0, *input_id, 0], device=self.device))
 
         input_lengths = torch.tensor([len(input_id) for input_id in input_ids])
         input_ids = torch.nn.utils.rnn.pad_sequence(input_ids, batch_first=True)
@@ -119,9 +119,9 @@ class KokoroWrapper:
         pred_aln_trg = torch.zeros(
             (*input_ids.shape, indices.shape[0]), device=m.device
         )
+        indices_range = torch.arange(indices.shape[0])
         for idx in range(pred_aln_trg.shape[0]):
-            print(indices[idx])
-            pred_aln_trg[idx, indices[:, idx], torch.arange(indices.shape[0])] = 1
+            pred_aln_trg[idx, indices[:, idx], indices_range] = 1
 
         # f0 and N prediction
         en = d.transpose(-1, -2) @ pred_aln_trg
