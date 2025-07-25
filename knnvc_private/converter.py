@@ -102,7 +102,7 @@ class Converter:
         wavlm = setup_module(config.wavlm, device)
         config.wavlm_dl.max_ratio = 0.5
         dl = eval_dataloader(config.wavlm_dl, target_df, wavlm)
-        for _, batch, data in tqdm(dl):
+        for batch, data in tqdm(dl):
             feats, feat_lengths = wavlm.run(batch).values()
             vc_feats, phone_feats = feats
             phones = self.phone_predictor(phone_feats).argmax(dim=2).cpu()

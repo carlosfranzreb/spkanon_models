@@ -71,7 +71,7 @@ class Converter(InferComponent):
         LOGGER.info("Extracting target features")
         wavlm = setup_module(config.wavlm, device)
         dl = eval_dataloader(config.wavlm_dl, target_df, wavlm)
-        for _, batch, data in dl:
+        for batch, data in dl:
             feats, feat_lengths = wavlm.run(batch).values()
             for idx in range(len(feats)):
                 spk = data[idx]["speaker_id"]
