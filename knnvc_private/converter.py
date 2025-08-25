@@ -17,8 +17,6 @@ from tqdm import tqdm
 from spkanon_eval.setup_module import setup as setup_module
 from spkanon_eval.datamodules.dataloader import eval_dataloader
 
-from .phone_predictor import PhonePredictor
-from .duration_predictor import DurationPredictor
 from .conv_decoder import load_model as load_conv_decoder
 
 LOGGER = logging.getLogger("progress")
@@ -54,20 +52,12 @@ class Converter:
         )
         self.dur_w = config.converter_params.get("duration_prediction_weight", 0.0)
         self.n_phone_clusters = config.converter_params.get("n_phone_clusters", 0)
-        if config.converter_params["phone_predictor_cls"] == "PhonePredictor":
-            self.phone_predictor = PhonePredictor(
-                config.converter_params.phone_predictor_ckpt, device
-            )
-        else:
-            self.phone_predictor = load_conv_decoder(
-                config.converter_params.phone_predictor_ckpt, device
-            )
-        if config.converter_params["duration_predictor_cls"] == "DurationPredictor":
-            self.duration_predictor = DurationPredictor(self.phone_lexicon, device)
-        else:
-            self.duration_predictor = load_conv_decoder(
-                config.converter_params.duration_predictor_ckpt, device
-            )
+        self.phone_predictor = load_conv_decoder(
+            config.converter_params.phone_predictor_ckpt, device
+        )
+        self.duration_predictor = load_conv_decoder(
+            config.converter_params.duration_predictor_ckpt, device
+        )
 
         # if possible, load the WavLM features of the targets
         target_feats_dir = config.converter_params.get("target_feats", None)
