@@ -1,3 +1,6 @@
+sample_rate_in: 16000
+sample_rate_out: 16000
+
 featex: # feature extraction module; components receive the output of torchaudio.load as input.
   wavlm:
     cls: spkanon_eval.featex.wavlm.wrapper.WavlmWrapper
@@ -31,7 +34,7 @@ synthesis: # speech synthesis; receives featfusion's output as input
   ckpt: checkpoints/knnvc/hifigan.pt
   config: checkpoints/knnvc/hifigan.json
   hop_length: ${featex.wavlm.hop_length}
-  sample_rate: 16000
+  sample_rate: ${sample_rate}
   enhance: ${enhance_audio}
   input:
     wavlm: wavlm
