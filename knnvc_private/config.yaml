@@ -9,7 +9,7 @@ featex: # feature extraction module; components receive the output of torchaudio
 
 featproc: # feature processing module
   knnvc:
-    cls: private_spkanon_models.knnvc_private.converter.Converter
+    cls: spkanon_models.knnvc_private.converter.Converter
     converter_params: ${converter_params}
     wavlm: ${featex.wavlm}
     wavlm_dl: ${data.config}
