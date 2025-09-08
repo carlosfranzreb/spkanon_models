@@ -14,7 +14,7 @@ featproc: # feature processing module
     cls: spkanon_models.stargan.stargan.StarGAN
     init: checkpoints/stargan/Models/epoch_00150.pth
     config: checkpoints/stargan/Models/config.yml
-    f0_ckpt: spkanon_eval/StarGANv2VC/Utils/JDC/bst.t7
+    f0_ckpt: spane/StarGANv2VC/Utils/JDC/bst.t7
     input:
       spectrogram: spectrogram
       n_frames: n_frames
