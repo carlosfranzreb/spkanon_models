@@ -36,6 +36,7 @@ class PhoneDurations(torch.nn.Module):
             the predictor was trained on.
         wavlm_ckpt: checkpoint for wavlm
         phone_predictor_ckpt: checkpoint for private kNN-VC's phone decoder.
+        ignore_durs: if true, durations are ignored: all durations are set to 1.
     """
 
     def __init__(
@@ -44,6 +45,7 @@ class PhoneDurations(torch.nn.Module):
         phone_lexicon: str,
         wavlm_ckpt: str,
         phone_predictor_ckpt: str,
+        ignore_durs: bool,
     ):
         super().__init__()
         self.device = device
@@ -59,6 +61,7 @@ class PhoneDurations(torch.nn.Module):
             }
         )
         self.wavlm = setup_module(wavlm_cfg, device)
+        self.ignore_durs = ignore_durs
 
     @torch.inference_mode()
     @fwd_default_precision(cast_inputs=torch.float32)
@@ -88,7 +91,12 @@ class PhoneDurations(torch.nn.Module):
                 dtype=torch.long,
                 device=self.device,
             )
-            utt_feats[torch.arange(utt_feats.shape[0]), unique_phones] = phone_durations
+
+            if not self.ignore_durs:
+                utt_feats[torch.arange(utt_feats.shape[0]), unique_phones] = phone_durations
+            else:
+                utt_feats[torch.arange(utt_feats.shape[0]), unique_phones] = 1
+            
             feats.append(utt_feats)
 
         return pad_sequence(feats, batch_first=True).to(torch.float)
