@@ -1,6 +1,6 @@
 # Speaker Anonymizers
 
-This collection of models are meant to be used with the evaluation framework [spkanon_eval](https://github.com/carlosfranzreb/spkanon_eval).
+This collection of anonymizers is meant to be used with the evaluation framework [SpAnE](https://github.com/carlosfranzreb/spane).
 The additional dependencies are defined in the corresponding build files in the `build` folder.
 The config and components of each anonymizer can be found under the anonymizer's folder.
 
