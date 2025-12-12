@@ -4,10 +4,10 @@ sample_rate_out: 44100
 featex: # feature extraction module; components receive the output of torchaudio.load as input.
   whisper:
     cls: spkanon_eval.featex.asr.whisper_wrapper.Whisper
-    train: false
     size: small # can be: tiny, base, small, medium, large
     output: text # can be text or encoding
-    max_chars_div: 800  # used to prevent hallucinations
+    max_chars_div: 800 # used to prevent hallucinations
+    language: en
 
 featproc: # feature processing module
   fast_pitch:
