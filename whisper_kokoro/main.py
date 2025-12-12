@@ -2,7 +2,6 @@ import importlib
 
 from omegaconf import DictConfig
 import torch
-import torch.nn.functional as F
 
 from kokoro import KPipeline
 
@@ -57,15 +56,22 @@ class KokoroWrapper:
         del dummy
 
         # phonemize texts
-        tokens = [self.pipeline.g2p(text)[1] for text in texts]
-        phones = list()
-        for token in tokens:
-            for gs, ps, tks in self.pipeline.en_tokenize(token):
-                if not ps:
-                    continue
-                if len(ps) > 510:
-                    ps = ps[:510]
-            phones.append(ps)
+        tuple_idx = 1 if self.config.lang_code in "ab" else 0
+        tokens = [self.pipeline.g2p(text)[tuple_idx] for text in texts]
+
+        if self.config.lang_code in "ab":
+            phones = list()
+            for token in tokens:
+                for gs, ps, tks in self.pipeline.en_tokenize(token):
+                    if not ps:
+                        continue
+
+                    if len(ps) > 510:
+                        ps = ps[:510]
+
+                phones.append(ps)
+        else:
+            phones = tokens
 
         # define target voices
         voice_indices = [len(ps) - 1 for ps in phones]
