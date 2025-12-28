@@ -28,11 +28,11 @@ class HifiGan:
         upsample_rates = self.model.cfg["generator"]["upsample_rates"]
         self.upsample_factor = int(torch.prod(torch.tensor(upsample_rates)).item())
 
-    def run(self, batch: list) -> tuple:
+    def run(self, batch: dict) -> tuple[Tensor, int]:
         self.x = batch[self.config.input.spectrogram]
         lens = batch[self.config.input.lengths]
         n_samples = lens * self.upsample_factor
-        
+
         m = self.model.generator
         self.x = m.conv_pre(self.x)
         for upsample_layer, resblock_group in zip(m.ups, m.resblocks):
@@ -43,7 +43,7 @@ class HifiGan:
                 self.tmp = resblock(self.x).detach()
                 self.xs = self.xs + self.tmp
             self.x = self.xs / m.num_kernels
-            
+
         self.x = F.leaky_relu(self.x)
         self.x = m.conv_post(self.x)
         self.x = torch.tanh(self.x)
@@ -59,7 +59,7 @@ class HifiGan:
         """
         self.device = device
         self.model.to(device)
-    
+
     def reset(self):
         """Delete intermediate tensors from the forward pass."""
         del self.tmp

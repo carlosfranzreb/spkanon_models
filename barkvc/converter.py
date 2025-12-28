@@ -6,12 +6,11 @@ by a HiFiGAN model.
 import json
 import os
 import logging
-import importlib
 
 import numpy as np
 import torch
 from torch.nn.utils.rnn import pad_sequence
-from omegaconf import OmegaConf
+from omegaconf import DictConfig
 
 from TTS.tts.layers.bark.inference_funcs import (
     load_npz,
@@ -29,7 +28,7 @@ SAMPLE_RATE = 24000  # model's sample rate
 
 
 class BarkVC(InferComponent):
-    def __init__(self, config, device):
+    def __init__(self, config: DictConfig, device: str):
         self.device = device
         self.config = config
         self.model = SingletonBarkVC().bark
@@ -87,17 +86,8 @@ class BarkVC(InferComponent):
             generate_voice(t_file, self.model, dump_path)
             self.target_feats.append(load_npz(dump_path))
 
-    def init_target_selection(self, cfg: OmegaConf, *args):
-        """
-        Initialize the target selection algorithm. This method is called by the
-        anonymizer, passing it config and the arguments that the defined algorithm
-        requires. These are passed directly to the algorithm, along with the target
-        features computed in the constructor.
-        """
-        module_str, cls_str = cfg.cls.rsplit(".", 1)
-        module = importlib.import_module(module_str)
-        cls = getattr(module, cls_str)
-        self.target_selection = cls(self.target_feats, cfg, *args)
+        # TODO: create target datafile and pass it to TSA
+        self.target_selection = None  # initialized by Anonymizer
 
     def run(self, batch):
         """

@@ -1,10 +1,10 @@
-import importlib
-
 from omegaconf import DictConfig
 from nemo.collections.tts.models import FastPitchModel
 import torch
 from torch import Tensor
 import torch.nn.functional as F
+
+from 
 
 
 class FastPitch:
@@ -32,21 +32,7 @@ class FastPitch:
             self.model = FastPitchModel.from_pretrained(model_name=model_path)
         self.model.eval()
         self.model = self.model.to(device)
-        self.target_selection = None  # initialized later (see init_target_selection)
-
-    def init_target_selection(self, cfg: DictConfig, *args):
-        """
-        Initialize the target selection algorithm. This method is called by the
-        anonymizer, passing it config and the arguments that the defined algorithm
-        requires. These are passed directly to the algorithm, along with the indices
-        representing the speakers.
-        """
-
-        targets = torch.arange(self.n_targets).to(self.device)
-        module_str, cls_str = cfg.cls.rsplit(".", 1)
-        module = importlib.import_module(module_str)
-        cls = getattr(module, cls_str)
-        self.target_selection = cls(targets, cfg, self.target_is_male, *args)
+        self.target_selection = None  # initialized by Anonymizer
 
     def run(self, batch: list) -> dict:
         """

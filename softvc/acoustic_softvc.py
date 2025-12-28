@@ -5,6 +5,7 @@ by a HiFiGAN model.
 
 import torch
 from torch.nn.modules.utils import consume_prefix_in_state_dict_if_present
+from omegaconf import DictConfig
 
 from spkanon_models.softvc.acoustic.model import AcousticModel
 
@@ -13,7 +14,7 @@ SAMPLE_RATE = 16000  # model's sample rate
 
 
 class AcousticSoftVC:
-    def __init__(self, config, device):
+    def __init__(self, config: DictConfig, device: str):
         """
         - The config must indicate under which key are placed the transcripts in the
             batch, under `config.input`..
@@ -35,7 +36,7 @@ class AcousticSoftVC:
         self.model.to(device)
         self.model.eval()
 
-    def run(self, batch):
+    def run(self, batch: dict) -> dict:
         """
         Given the HuBERT units, placed in the batch under the key `self.input`,
         computes and returns the spectrogram.
@@ -47,7 +48,7 @@ class AcousticSoftVC:
         target = torch.zeros(n_samples.shape[0], dtype=torch.int32)
         return {"spectrogram": spec, "n_samples": n_samples, "target": target}
 
-    def to(self, device):
+    def to(self, device: str):
         """
         Implementation of PyTorch's `to()` method to set the device.
         """

@@ -1,5 +1,8 @@
+import importlib
+
 from omegaconf import DictConfig
 import torch
+import torch.nn.functional as F
 
 from kokoro import KPipeline
 
@@ -13,6 +16,7 @@ class KokoroWrapper:
         self.upsampling_rate = 1800
 
         # get target speakers from config
+        self.target_selection = None  # initialized later (see init_target_selection)
         self.targets = list()
         self.target_is_male = list()
         for gender in ["F", "M"]:
@@ -27,8 +31,18 @@ class KokoroWrapper:
         self.targets = torch.stack(self.targets).to(device)
         self.target_is_male = torch.tensor(self.target_is_male, device=device)
 
-        # TODO: define speakers in a datafile
-        self.target_selection = None  # initialized by Anonymizer
+    def init_target_selection(self, cfg: DictConfig, *args):
+        """
+        Initialize the target selection algorithm. This method is called by the
+        anonymizer, passing it config and the arguments that the defined algorithm
+        requires. These are passed directly to the algorithm, along with the target
+        speaker data from Kokoro.
+        """
+
+        module_str, cls_str = cfg.cls.rsplit(".", 1)
+        module = importlib.import_module(module_str)
+        cls = getattr(module, cls_str)
+        self.target_selection = cls(self.targets, cfg, self.target_is_male, *args)
 
     def run(self, batch: list) -> tuple:
 
@@ -43,22 +57,15 @@ class KokoroWrapper:
         del dummy
 
         # phonemize texts
-        tuple_idx = 1 if self.config.lang_code in "ab" else 0
-        tokens = [self.pipeline.g2p(text)[tuple_idx] for text in texts]
-
-        if self.config.lang_code in "ab":
-            phones = list()
-            for token in tokens:
-                for gs, ps, tks in self.pipeline.en_tokenize(token):
-                    if not ps:
-                        continue
-
-                    if len(ps) > 510:
-                        ps = ps[:510]
-
-                phones.append(ps)
-        else:
-            phones = tokens
+        tokens = [self.pipeline.g2p(text)[1] for text in texts]
+        phones = list()
+        for token in tokens:
+            for gs, ps, tks in self.pipeline.en_tokenize(token):
+                if not ps:
+                    continue
+                if len(ps) > 510:
+                    ps = ps[:510]
+            phones.append(ps)
 
         # define target voices
         voice_indices = [len(ps) - 1 for ps in phones]

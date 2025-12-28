@@ -9,11 +9,10 @@ There are two kinds of conversion:
 Currently, only the first kind is implemented.
 """
 
-import importlib
-
 from omegaconf import OmegaConf, DictConfig
 import torch
 from torch import Tensor
+import torch.nn.Module as Module
 
 from StarGANv2VC.models import (
     Generator,
@@ -22,10 +21,10 @@ from StarGANv2VC.models import (
 from StarGANv2VC.Utils.JDC.model import JDCNet
 
 from spkanon_eval.component_definitions import InferComponent
-
+from spkanon_eval.datamodules import AudioBatch
 
 SAMPLE_RATE = 24000  # model's sample rate
-TARGET_IS_MALE = {
+TARGET_IS_MALE = {  # TODO: replace this with a target datafile
     225: False,
     228: False,
     229: False,
@@ -50,7 +49,7 @@ TARGET_IS_MALE = {
 
 
 class StarGAN(InferComponent):
-    def __init__(self, config: DictConfig, device: str) -> None:
+    def __init__(self, config: DictConfig, device: str):
         """
         The config must indicate under which key are placed the transcripts in the
         batch, under `config.input`. It may also indicate which speaker to use, under
@@ -70,30 +69,9 @@ class StarGAN(InferComponent):
             raise ValueError("The model checkpoint must be a .pth file.")
         self.generator, self.mapping_network, self.f0_model = init_model(config, device)
 
-        self.target_selection = None  # initialized later (see init_target_selection)
+        self.target_selection = None  # initialized by Anonymizer
 
-    def init_target_selection(self, cfg: DictConfig, *args):
-        """
-        Initialize the target selection algorithm. This method is called by the
-        anonymizer, passing it config and the arguments that the defined algorithm
-        requires. These are passed directly to the algorithm, along with the style
-        vectors of the StarGAN.
-        """
-
-        style_vecs = self.mapping_network(
-            torch.randn(
-                self.config.n_targets, self.mapping_network.shared[0].in_features
-            ).to(self.device),
-            torch.arange(self.config.n_targets).to(self.device),
-        )
-
-        module_str, cls_str = cfg.cls.rsplit(".", 1)
-        module = importlib.import_module(module_str)
-        cls = getattr(module, cls_str)
-        target_is_male = torch.tensor(list(TARGET_IS_MALE.values())).to(self.device)
-        self.target_selection = cls(style_vecs, cfg, target_is_male, *args)
-
-    def run(self, batch: list) -> dict[str, Tensor]:
+    def run(self, batch: AudioBatch) -> dict:
         """
         Convert the input spectrogram to the target speaker style.
         Input and output dims: (batch_size, n_mels, n_frames)
@@ -132,7 +110,7 @@ class StarGAN(InferComponent):
         """Normalize a spectrogram with mean=-4 and std=4"""
         return (torch.log(1e-5 + spec) + 4) / 4
 
-    def to(self, device: str) -> None:
+    def to(self, device: str):
         """
         Implementation of PyTorch's `to()` method to set the device.
         """
@@ -144,7 +122,8 @@ class StarGAN(InferComponent):
             device
         )
 
-def init_model(config, device):
+
+def init_model(config: DictConfig, device: str) -> tuple[Module, Module, Module]:
     """
     Initialize the generator, the mapping network and the F0 model.
     Store them as attributes and load the weights stored in the checkpoint.

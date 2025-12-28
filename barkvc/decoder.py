@@ -21,7 +21,7 @@ class EncodecDecoder(InferComponent):
         self.model = SingletonBarkVC().bark
         self.model.to(self.device)
 
-    def run(self, batch: list) -> tuple[Tensor, Tensor]:
+    def run(self, batch: dict) -> tuple[Tensor, Tensor]:
         """
         Given the spectrogram, placed in the batch under the key `self.input`,
         computes and returns the spectrogram.
@@ -44,7 +44,7 @@ class EncodecDecoder(InferComponent):
         waves = pad_sequence(waves, batch_first=True).unsqueeze(1)
         return waves, n_samples
 
-    def to(self, device: str) -> None:
+    def to(self, device: str):
         """
         Implementation of PyTorch's `to()` method to set the device.
         """

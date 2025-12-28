@@ -11,7 +11,7 @@ featex: # feature extraction module; components receive the output of torchaudio
     hop_length: 320
 
 featproc: # feature processing module
-  knnvc:
+  knnvc_private:
     cls: spkanon_models.knnvc_private.converter.Converter
     converter_params: ${converter_params}
     wavlm: ${featex.wavlm}

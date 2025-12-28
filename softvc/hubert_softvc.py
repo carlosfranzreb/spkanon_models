@@ -5,6 +5,8 @@ HuBERT component of the SoftVC model.
 import torch
 from omegaconf import DictConfig
 
+from spkanon_eval.datamodules import AudioBatch
+
 SAMPLE_RATE = 16000  # model's sample rate
 
 
@@ -16,7 +18,7 @@ class HubertSoftVC:
         """
         self.config = config
         self.device = device
-        
+
         if not hasattr(torch.nn.utils.parametrizations, "weight_norm"):
             torch.nn.utils.parametrizations.weight_norm = torch.nn.utils.weight_norm
 
@@ -26,20 +28,17 @@ class HubertSoftVC:
         self.model.to(self.device)
         self.model.eval()
 
-    def run(self, batch: list) -> dict:
+    def run(self, batch: AudioBatch) -> dict:
         """
         Returns the acoustic units for the given NeMo batch, which is a tuple where
         the audio batch is placed in the first position.
         """
-        audio = batch[0].unsqueeze(1)
-        audio_lens = batch[2]
-        n_feats = audio_lens // self.config.downsampling_ratio
+        audio = batch.audios.unsqueeze(1)
+        n_feats = batch.lens // self.config.downsampling_ratio
         feats = self.model.units(audio)
         return {"feats": feats, "n_feats": n_feats}
 
-    def to(self, device):
-        """
-        Implementation of PyTorch's `to()` method to set the device.
-        """
+    def to(self, device: str):
+        """Implementation of PyTorch's `to()` method to set the device."""
         self.device = device
         self.model.to(self.device)

@@ -1,7 +1,9 @@
 import sys
 
 import torch
+from torch import Tensor
 from torch.nn.modules.utils import consume_prefix_in_state_dict_if_present
+from omegaconf import DictConfig
 
 sys.path.append("softvc_hifigan")
 
@@ -9,7 +11,7 @@ from spkanon_models.softvc.hifigan.generator import HifiganGenerator
 
 
 class HifiganSoftVC:
-    def __init__(self, config, device):
+    def __init__(self, config: DictConfig, device: str):
         """
         The model is loaded following the instructions in the notebook provided in
         the repository https://github.com/bshall/soft-vc.
@@ -29,7 +31,7 @@ class HifiganSoftVC:
         self.model.eval()
         self.model.remove_weight_norm()
 
-    def run(self, batch):
+    def run(self, batch: dict) -> tuple[Tensor, Tensor]:
         """
         Given the spectrogram, placed in the batch under the key `self.input`,
         computes and returns the spectrogram.
@@ -40,7 +42,7 @@ class HifiganSoftVC:
         audio_anon = self.model.forward(audio)
         return audio_anon, n_samples
 
-    def to(self, device):
+    def to(self, device: str):
         """
         Implementation of PyTorch's `to()` method to set the device.
         """

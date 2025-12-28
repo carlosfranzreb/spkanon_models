@@ -1,11 +1,5 @@
-"""
-Selects targets based on speaker embeddings.
-"""
-
 import os
-import json
 import logging
-import importlib
 
 import torch
 from torch import Tensor
@@ -15,7 +9,7 @@ from omegaconf import DictConfig
 from spkanon_eval.setup_module import setup as setup_module
 from spkanon_eval.datamodules.dataloader import eval_dataloader
 from spkanon_eval.component_definitions import InferComponent
-
+from spkanon_eval.target_selection import BaseSelector
 
 LOGGER = logging.getLogger("progress")
 
@@ -41,8 +35,6 @@ class Converter(InferComponent):
         self.device = device
         self.target_selection = None  # initialized later (see init_target_selection)
         self.target_feats = list()
-        self.target_is_male = list()
-        target_df = os.path.join(config.exp_folder, "data", "targets.txt")
 
         # if possible, load the WavLM features of the targets
         target_feats_dir = config.get("target_feats", None)
@@ -56,30 +48,18 @@ class Converter(InferComponent):
                     )
                 )
 
-            # gather the genders of the target speakers
-            LOGGER.info("Loading the genders of the target speakers")
-            self.target_is_male = torch.zeros(len(self.target_feats), dtype=torch.bool)
-            with open(target_df, "r") as f:
-                for line in f:
-                    obj = json.loads(line.strip())
-                    spk = obj["speaker_id"]
-                    self.target_is_male[spk] = obj["gender"] == "M"
-
-            return
-
         # otherwise compute the WavLM features and concatenate them for each speaker
         LOGGER.info("Extracting target features")
+        self.target_df = os.path.join(config.root_folder, "data", "targets.txt")
         wavlm = setup_module(config.wavlm, device)
-        dl = eval_dataloader(config.wavlm_dl, target_df, wavlm)
-        for batch, data in dl:
+        dl = eval_dataloader(config.wavlm_dl, self.target_df, wavlm)
+        for batch in dl:
             feats, feat_lengths = wavlm.run(batch).values()
             for idx in range(len(feats)):
-                spk = data[idx]["speaker_id"]
+                spk = batch.metadata[idx]["speaker_id"]
                 while len(self.target_feats) <= spk:
                     self.target_feats.append(None)
-                    self.target_is_male.append(None)
 
-                self.target_is_male[spk] = data[idx]["gender"] == "M"
                 unpadded_feats = feats[idx, : feat_lengths[idx]].to("cpu")
                 if self.target_feats[spk] is None:
                     self.target_feats[spk] = unpadded_feats
@@ -88,44 +68,23 @@ class Converter(InferComponent):
                         [self.target_feats[spk], unpadded_feats], dim=0
                     )
 
-        self.target_is_male = torch.tensor(self.target_is_male)
-
         # dump the features
         dump_folder = os.path.join(config.exp_folder, "target_feats")
         os.makedirs(dump_folder)
         for idx in range(len(self.target_feats)):
             torch.save(self.target_feats[idx], os.path.join(dump_folder, f"{idx}.pt"))
 
-    def init_target_selection(self, cfg: DictConfig, *args):
-        """
-        Initialize the target selection algorithm. This method is called by the
-        anonymizer, passing it config and the arguments that the defined algorithm
-        requires. These are passed directly to the algorithm, along with the target
-        features computed in the constructor.
-        """
-        module_str, cls_str = cfg.cls.rsplit(".", 1)
-        module = importlib.import_module(module_str)
-        cls = getattr(module, cls_str)
-        self.target_selection = cls(
-            self.target_feats, cfg, target_is_male=self.target_is_male, *args
-        )
+        self.target_selection = None  # initialized by Anonymizer
 
-    def run(self, batch: list) -> dict:
+    def run(self, batch: dict) -> dict:
         """
         Selects the target speakers for the given batch if needed and converts the batch
         to those targets.
-
-        Args:
-            batch: a list with a tensor comprising spectrograms in first position.
-
-        TODO: Check whether running this on GPU performs better.
         """
         # get the features, source and target speakers
+        target = self.target_selection.select(batch)
         feats = batch[self.config.input.feats].to("cpu")
         n_feats = batch[self.config.input.n_feats].to("cpu")
-        source = batch[self.config.input.source].to("cpu")
-        source_is_male = batch[self.config.input.source_is_male].to("cpu")
-        target = self.target_selection.select(feats, source, source_is_male)
 
         # run the conversion
         converted_feats = list()

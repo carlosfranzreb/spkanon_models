@@ -10,7 +10,7 @@ import importlib
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
-from omegaconf import OmegaConf
+from omegaconf import DictConfig
 from sklearn.cluster import KMeans
 from tqdm import tqdm
 
@@ -23,7 +23,7 @@ LOGGER = logging.getLogger("progress")
 
 
 class Converter:
-    def __init__(self, config: OmegaConf, device: str) -> None:
+    def __init__(self, config: DictConfig, device: str) -> None:
         """
         Initialize the converter.
 
@@ -41,9 +41,7 @@ class Converter:
         """
         self.config = config
         self.device = device
-        self.target_selection = None  # initialized later (see init_target_selection)
         self.target_feats = list()
-        self.target_is_male = list()
         target_df = os.path.join(config.exp_folder, "data", "targets.txt")
 
         # load the phone and duration predictors
@@ -75,16 +73,6 @@ class Converter:
                     and self.target_feats[0].shape[1] == self.n_phone_clusters
                 )
 
-            # gather the genders of the target speakers
-            LOGGER.info("Loading the genders of the target speakers")
-            self.target_is_male = torch.zeros(len(self.target_feats), dtype=torch.bool)
-            with open(target_df, "r") as f:
-                for line in f:
-                    obj = json.loads(line.strip())
-                    spk = obj["speaker_id"]
-                    if spk < len(self.target_feats):
-                        self.target_is_male[spk] = obj["gender"] == "M"
-
             return
 
         # otherwise compute the WavLM features and concatenate them for each speaker
@@ -106,9 +94,6 @@ class Converter:
                     self.target_feats.append(
                         [list() for _ in range(len(self.phone_lexicon))]
                     )
-                    self.target_is_male.append(None)
-                if self.target_is_male[spk] is None:
-                    self.target_is_male[spk] = data[sample_idx]["gender"] == "M"
 
                 # append the features to the corresponding phone
                 for feat_idx in range(feat_lengths[sample_idx]):
@@ -118,7 +103,6 @@ class Converter:
                     self.target_feats[spk][phone].append(vc_feats[sample_idx, feat_idx])
 
         # vectorize the lists
-        self.target_is_male = torch.tensor(self.target_is_male)
         for spk_idx in range(len(self.target_feats)):
             for phone_idx in range(len(self.target_feats[spk_idx])):
                 if len(self.target_feats[spk_idx][phone_idx]) > 0:
@@ -166,20 +150,7 @@ class Converter:
         for idx in range(len(self.target_feats)):
             torch.save(self.target_feats[idx], os.path.join(dump_folder, f"{idx}.pt"))
 
-    def init_target_selection(self, cfg: OmegaConf, *args):
-        """
-        Initialize the target selection algorithm. This method is called by the
-        anonymizer, passing it config and the arguments that the defined algorithm
-        requires. These are passed directly to the algorithm, along with the target
-        features computed in the constructor.
-        """
-        self.target_is_male = self.target_is_male.to(self.device)
-        module_str, cls_str = cfg.cls.rsplit(".", 1)
-        module = importlib.import_module(module_str)
-        cls = getattr(module, cls_str)
-        self.target_selection = cls(
-            self.target_feats, cfg, target_is_male=self.target_is_male, *args
-        )
+        self.target_selection = None  # initialized by Anonymizer
 
     def run(self, batch: list) -> dict:
         """
@@ -312,7 +283,7 @@ class Converter:
                     conv_feats_new = torch.empty_like(conv_feats)
                     for feat_idx, phone in enumerate(conv_feats_dur):
                         src_feat = conv_feats[feat_idx]
-                        tgt_feats = spk_tgt_vecs[src_idx][phone]
+                        tgt_feats = spk_tgt_vecs[phone]
                         if tgt_feats.shape[0] == 0:
                             conv_feats_new[feat_idx] = torch.zeros_like(src_feat)
                         else:
