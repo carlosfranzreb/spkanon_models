@@ -50,7 +50,7 @@ class Converter(InferComponent):
 
         # otherwise compute the WavLM features and concatenate them for each speaker
         LOGGER.info("Extracting target features")
-        self.target_df = os.path.join(config.root_folder, "data", "targets.txt")
+        self.target_df = os.path.join(config.exp_folder, "data", "targets.txt")
         wavlm = setup_module(config.wavlm, device)
         dl = eval_dataloader(config.wavlm_dl, self.target_df, wavlm)
         for batch in dl:
