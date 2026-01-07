@@ -33,7 +33,7 @@ class Converter(InferComponent):
         """
         self.config = config
         self.device = device
-        self.target_selection = None  # initialized later (see init_target_selection)
+        self.target_selection = None  # initialized by Anonymizer
         self.target_feats = list()
 
         # if possible, load the WavLM features of the targets
@@ -47,6 +47,8 @@ class Converter(InferComponent):
                         map_location="cpu",
                     )
                 )
+            
+            return
 
         # otherwise compute the WavLM features and concatenate them for each speaker
         LOGGER.info("Extracting target features")
@@ -74,7 +76,6 @@ class Converter(InferComponent):
         for idx in range(len(self.target_feats)):
             torch.save(self.target_feats[idx], os.path.join(dump_folder, f"{idx}.pt"))
 
-        self.target_selection = None  # initialized by Anonymizer
 
     def run(self, batch: dict) -> dict:
         """
