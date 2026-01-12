@@ -1,7 +1,11 @@
+import os
+import json
+
 from omegaconf import DictConfig
 import torch
-
+from torch.nn.utils.rnn import pad_sequence
 from kokoro import KPipeline
+import nltk
 
 
 class KokoroWrapper:
@@ -11,40 +15,45 @@ class KokoroWrapper:
         self.device = device
         self.pipeline = KPipeline(lang_code=config.lang_code)
         self.upsampling_rate = 1800
-
-        # get target speakers from config
-        self.targets = list()
-        self.target_is_male = list()
-        for gender in ["F", "M"]:
-            for target in config.targets[gender]:
-                self.targets.append(target)
-                self.target_is_male.append(gender == "M")
+        nltk.download("punkt_tab")
 
         # load target speakers
+        target_df = os.path.join(config.exp_folder, "data", "targets.txt")
+        self.targets = dict()
+        for line in open(target_df):
+            obj = json.loads(line)
+            self.targets[obj["speaker_id"]] = obj["label"]
+
+        self.targets = [self.targets[idx] for idx in range(len(self.targets))]
         self.targets = [
             self.pipeline.load_voice(tgt).squeeze(1) for tgt in self.targets
         ]
         self.targets = torch.stack(self.targets).to(device)
-        self.target_is_male = torch.tensor(self.target_is_male, device=device)
 
-        # TODO: define speakers in a datafile
         self.target_selection = None  # initialized by Anonymizer
 
     def run(self, batch: list) -> tuple:
 
-        # get the texts and the source speakers
+        # get the texts and the target speakers
         texts = batch[self.config.input.text]
-        source = batch[self.config.input.source]
-        source_is_male = batch[self.config.input.source_is_male].to(self.device)
+        targets = self.target_selection.select(batch)
 
-        # pass a dummy input to the target selection algorithm
-        dummy = torch.zeros(len(texts), dtype=torch.int64, device=self.device)
-        targets = self.target_selection.select(dummy, source, source_is_male)
-        del dummy
+        # split texts into sentences and keep track of texts
+        sentences, sentence2text = list(), list()
+        sentence_targets = list()
+        for idx, text in enumerate(texts):
+            text_sentences = nltk.tokenize.sent_tokenize(
+                text, language=self.config.tokenizer_language
+            )
+            sentences.extend(text_sentences)
+            sentence2text.extend([idx] * len(text_sentences))
+            sentence_targets.extend([targets[idx].item()] * len(text_sentences))
 
-        # phonemize texts
+        sentence_targets = torch.tensor(sentence_targets)
+
+        # phonemize sentences
         tuple_idx = 1 if self.config.lang_code in "ab" else 0
-        tokens = [self.pipeline.g2p(text)[tuple_idx] for text in texts]
+        tokens = [self.pipeline.g2p(text)[tuple_idx] for text in sentences]
 
         if self.config.lang_code in "ab":
             phones = list()
@@ -62,7 +71,7 @@ class KokoroWrapper:
 
         # define target voices
         voice_indices = [len(ps) - 1 for ps in phones]
-        voices = self.targets[targets, voice_indices]
+        voices = self.targets[sentence_targets, voice_indices]
 
         # tokenize phones
         context_len = self.pipeline.model.context_length
@@ -78,7 +87,7 @@ class KokoroWrapper:
             input_ids.append(torch.tensor([0, *input_id, 0], device=self.device))
 
         input_lengths = torch.tensor([len(input_id) for input_id in input_ids])
-        input_ids = torch.nn.utils.rnn.pad_sequence(input_ids, batch_first=True)
+        input_ids = pad_sequence(input_ids, batch_first=True)
 
         # create mask for the batch
         text_mask = (
@@ -126,9 +135,23 @@ class KokoroWrapper:
         with torch.no_grad():
             audios = m.decoder(asr, F0_pred, N_pred, voices[:, :128])
 
+        # merge audios of sentences to form texts again
+        audios = audios.squeeze(1)
+        full_audios = [torch.tensor([])] * len(texts)
+        full_lengths = torch.zeros(len(text), dtype=torch.int)
+        for sentence_idx, text_idx in enumerate(sentence2text):
+            full_audios[text_idx] = torch.hstack(
+                [full_audios[text_idx], audios[sentence_idx]]
+            )
+            full_lengths[text_idx] += input_lengths[sentence_idx]
+
+        full_audios = pad_sequence(full_audios, batch_first=True)
+        full_audios = full_audios.unsqueeze(1)
+
         # compute audio_lens and return
-        audio_lens = input_lengths * self.upsampling_rate
-        return audios, audio_lens, targets
+        audio_lens = full_lengths * self.upsampling_rate
+
+        return full_audios, audio_lens, targets
 
     def to(self, device: str):
         """
@@ -136,10 +159,3 @@ class KokoroWrapper:
         """
         self.device = device
         self.model.to(device)
-
-    def reset(self):
-        """Delete intermediate tensors from the forward pass."""
-        del self.tmp
-        del self.xs
-        del self.x
-        torch.cuda.empty_cache()

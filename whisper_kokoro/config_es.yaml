@@ -11,15 +11,11 @@ featex: # feature extraction module; components receive the output of torchaudio
 
 synthesis:
   cls: spkanon_models.whisper_kokoro.main.KokoroWrapper
+  exp_folder: ${exp_folder}
   lang_code: e
+  tokenizer_language: spanish
   speed: 1
-  targets:
-    F:
-      - ef_dora
-    M:
-      - em_alex
-      - em_santa
   input:
     text: whisper
     source: source
-    source_is_male: source_is_male
+    is_male: is_male

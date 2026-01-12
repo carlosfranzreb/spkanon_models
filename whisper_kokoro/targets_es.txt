@@ -1,0 +1,2 @@
+{"path": "spane/tests/data/LibriSpeech/dev-clean-2/1988/24833/1988-24833-0000.flac", "duration": 1.0, "label": "ef_dora", "is_male": false}
+{"path": "spane/tests/data/LibriSpeech/dev-clean-2/1988/24833/1988-24833-0000.flac", "duration": 1.0, "label": "em_alex", "is_male": true}
