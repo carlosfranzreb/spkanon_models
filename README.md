@@ -63,7 +63,7 @@ FastPitch and HiFiGAN were trained together on 291 hours of 10 speakers from HiF
 
 ## STT-TTS with Whisper & Kokoro
 
-: requires installing [Kokoro](https://github.com/hexgrad/kokoro)
+Requires installing [Kokoro](https://github.com/hexgrad/kokoro) and NLTK (`pip install nltk`).
 
 As the one above, this pipeline is an STT-TTS, but using Kokoro instead of FastPitch and HiFiGAN.
 Kokoro is one of the [most popular TTS systems in HuggingFace](https://huggingface.co/models?pipeline_tag=text-to-speech), as well as one of the best in the [TTS Arena](https://huggingface.co/spaces/TTS-AGI/TTS-Arena-V2).
